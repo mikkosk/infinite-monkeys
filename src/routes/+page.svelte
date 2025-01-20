@@ -1,47 +1,80 @@
 <script lang="ts">
-	import GuessList from "$lib/modules/GuessList.svelte";
-	import Input from "$lib/modules/Input.svelte";
-	import Timer from "$lib/modules/Timer.svelte";
-    import { CorrectState, type Guess } from "$lib/types";
+	import GuessList from "../lib/modules/GuessList.svelte";
+	import Input from "../lib/modules/Input.svelte";
+	import Timer from "../lib/modules/Timer.svelte";
+    import { CorrectState } from "../lib/types";
+    import type { Guess } from "../lib/types";
+    import {hamlet} from "../lib/hamlet";
+
 
 
     let gameOver = false;
     let guesses: Guess[] = [];
-    let answer = "To be or not to be that is the question";
+    let answer = hamlet[Math.floor(Math.random() * hamlet.length)].toLowerCase();
 
     const matchPercentage = (guess: string, answer: string) => {
-            const hasMatch = answer.toLowerCase().includes(guess.toLowerCase());
+            const guessCharacters = guess.split("").reduce((acc, char) => {
+                acc[char] = acc[char] ? acc[char] + 1 : 1;
+                return acc;
+            }, {} as Record<string, number>);
 
-            if (!hasMatch) {
-                return 0;
+            const answerCharacters = answer.split("").reduce((acc, char) => {
+                acc[char] = acc[char] ? acc[char] + 1 : 1;
+                return acc;
+            }, {} as Record<string, number>);
+
+            let correctCharacters = 0;
+            let unnecessaryCharacters = 0;
+
+            for (const char in guessCharacters) {
+                const answerCount = answerCharacters[char] || 0;
+                const guessCount = guessCharacters[char];
+
+                if(guessCount <= answerCount) {
+                    correctCharacters += guessCount;
+                } else {
+                    correctCharacters += answerCount;
+                    unnecessaryCharacters += guessCount - answerCount;
+                }
             }
 
-            const guessLength = guess.length;
-            const answerLength = answer.length;
+            let chractersInCorrectPlaces = 0;
 
-            return Math.floor((guessLength / answerLength) * 100) || 1;
+            for (let i = 0; i < answer.length; i++) {
+                if (guess[i] === answer[i]) {
+                    chractersInCorrectPlaces++;
+                }
+            }
+
+            return {
+                correctCharacters,
+                unnecessaryCharacters,
+                chractersInCorrectPlaces,
+                percentage: Math.floor(chractersInCorrectPlaces/answer.length*100)
+            }
+
         }
 
     const getCorrectState = (matchPercentage: number) => {
         switch (matchPercentage) {
             case 100:
                 return CorrectState.Correct;
-            case 0:
-                return CorrectState.Incorrect;
             default:
                 return CorrectState.Partial;
         }
     }
 
-    const addGuess = (guess: string) => {
+    const addGuess = (guessRaw: string) => {
+
+        const guess = guessRaw.toLowerCase();
 
         const id =`${guesses.length + 1}`;
 
-        const percentage = matchPercentage(guess, answer);
+        const {percentage, correctCharacters, chractersInCorrectPlaces, unnecessaryCharacters} = matchPercentage(guess, answer);
 
         const correctState: Guess["correct"] = getCorrectState(percentage);
 
-        const newGuess = { guess, correct: correctState, percentage, id };
+        const newGuess = { guess, correct: correctState, percentage, id, correctCharacters, chractersInCorrectPlaces, unnecessaryCharacters };
         guesses = [...guesses, newGuess];
 
         if (correctState === CorrectState.Correct) {
@@ -55,9 +88,11 @@
         <Timer gameOver={gameOver} />
     </div>
     <div class="content">
+        <div class="answer-box">
+            <p class="answer">{answer}</p>
+        </div>
         <Input addGuess={addGuess} gameOver={gameOver}/>
         <GuessList guesses={guesses} />
-
     </div>
 
     <div class="sidebar">
@@ -73,6 +108,18 @@
 </div>
 
 <style>
+
+    .answer-box {
+        background-color: lightcoral;
+    }
+
+    .answer {
+        color: lightcoral;
+    }
+    .answer:hover {
+        color: black;
+    }
+
     .container {
         display: flex;
         flex-direction: row;

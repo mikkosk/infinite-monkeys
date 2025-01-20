@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CorrectState, type Guess } from "$lib/types";
+	import { CorrectState, type Guess } from "../types";
 
     export let guesses: Guess[];
 
@@ -19,6 +19,11 @@
     {#each guesses as guess}
         <li class={`guess ${guess.correct}`}>
             <span>{formText(guess)}</span>
+            <div>
+                <span>Oikeita kirjaimia: {guess.correctCharacters}, joista oikeassa paikassa: {guess.chractersInCorrectPlaces}.</span>
+                <br/>
+                <span>Tarpeettomia kirjaimia: {guess.unnecessaryCharacters}.</span>
+            </div>
             <div class="progress_bar_container">
                 <div class="pbc left">
                     <div class="progress_bar" style={`width: ${guess.percentage}%`}/>

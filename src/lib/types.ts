@@ -9,6 +9,11 @@ export interface Guess {
     guess: string;
     correct: CorrectState;
     percentage: number;
+    correctCharacters: number;
+    chractersInCorrectPlaces: number; 
+    unnecessaryCharacters: number;
+
+
 }
 
 export interface Answer {
